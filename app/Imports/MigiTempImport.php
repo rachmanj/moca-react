@@ -18,10 +18,11 @@ class MigiTempImport implements ToCollection, WithHeadingRow
     public function collection(Collection $rows)
     {
         $allowedPrefixes = ['SP-', 'GT-', 'UC-', 'CO-'];
+        $importedCombinations = [];
         
         foreach ($rows as $row) {
-            // Skip rows with empty item_code
-            if (empty($row['item_code'])) {
+            // Skip rows with empty item_code or document_number or line
+            if (empty($row['item_code']) || empty($row['document_number']) || empty($row['line'])) {
                 continue;
             }
             
@@ -39,15 +40,36 @@ class MigiTempImport implements ToCollection, WithHeadingRow
                 continue;
             }
             
+            // Create a unique key for document_number and line combination
+            $combinationKey = $row['document_number'] . '_' . $row['line'];
+            
+            // Skip if this combination already exists in our tracking array
+            if (in_array($combinationKey, $importedCombinations)) {
+                continue;
+            }
+            
+            // Check if this combination already exists in the database
+            $existingRecord = DB::table('migi_temps')
+                ->where('document_number', $row['document_number'])
+                ->where('line', $row['line'])
+                ->exists();
+                
+            if ($existingRecord) {
+                continue;
+            }
+            
+            // Add to our tracking array
+            $importedCombinations[] = $combinationKey;
+            
             // Insert the row into the database
             DB::table('migi_temps')->insert([
-                'document_number' => $row['document_number'] ?? null,
+                'document_number' => $row['document_number'],
                 'creation_date' => $this->transformDate($row['creation_date']),
                 'document_date' => $this->transformDate($row['document_date']),
                 'wo_number' => $row['wo_number'] ?? null,
                 'subject' => $row['subject'] ?? null,
                 'category' => $row['category'] ?? null,
-                'line' => $row['line'] ?? null,
+                'line' => $row['line'],
                 'issue_purpose' => $row['issue_purpose'] ?? null,
                 'job_category' => $row['job_category'] ?? null,
                 'job_name' => $row['job_name'] ?? null,
@@ -55,7 +77,7 @@ class MigiTempImport implements ToCollection, WithHeadingRow
                 'model_number' => $row['model_number'] ?? null,
                 'serial_number' => $row['serial_number'] ?? null,
                 'hours_meter' => $row['hours_meter'] ?? null,
-                'item_code' => $row['item_code'] ?? null,
+                'item_code' => $row['item_code'],
                 'desc' => $row['desc'] ?? null,
                 'qty' => $row['qty'] ?? null,
                 'stock_price' => $row['stock_price'] ?? null,

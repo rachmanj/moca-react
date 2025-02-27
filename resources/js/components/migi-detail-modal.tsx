@@ -1,6 +1,6 @@
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 
 interface MigiRecord {
     id: number;
@@ -47,6 +47,11 @@ const formatDate = (dateString: string | null | undefined) => {
 };
 
 export default function MigiDetailModal({ isOpen, onClose, migi, details, loading }: MigiDetailModalProps) {
+    // Sort details by line number in ascending order
+    const sortedDetails = useMemo(() => {
+        return [...details].sort((a, b) => a.line - b.line);
+    }, [details]);
+
     return (
         <Transition appear show={isOpen} as={Fragment}>
             <Dialog as="div" className="relative z-10" onClose={onClose}>
@@ -148,8 +153,8 @@ export default function MigiDetailModal({ isOpen, onClose, migi, details, loadin
                                                         </tr>
                                                     </thead>
                                                     <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                                                        {details.length > 0 ? (
-                                                            details.map((detail) => (
+                                                        {sortedDetails.length > 0 ? (
+                                                            sortedDetails.map((detail) => (
                                                                 <tr key={detail.id}>
                                                                     <td className="px-3 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-gray-400">
                                                                         {detail.line}
