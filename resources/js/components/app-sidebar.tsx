@@ -1,49 +1,20 @@
+import { Link } from '@inertiajs/react';
+import { Folder } from 'lucide-react';
+
+import { MainNavItems } from '@/components/main-nav-items';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/react';
-import { Box, LayoutGrid, Upload } from 'lucide-react';
+import { type NavGroup } from '@/types';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+const footerNavItems = [
     {
-        title: 'Dashboard',
-        url: '/dashboard',
-        icon: LayoutGrid,
+        title: 'Repository',
+        url: 'https://github.com/laravel/react-starter-kit',
+        icon: Folder,
     },
-    {
-        title: 'Migi',
-        url: '/migi',
-        icon: Upload,
-    },
-    {
-        title: 'Oldcores',
-        url: '/oldcores',
-        icon: Box,
-    },
-];
-
-const masterNavItems: NavItem[] = [
-    {
-        title: 'Project',
-        url: '/project',
-        icon: LayoutGrid,
-    },
-    {
-        title: 'Department',
-        url: '/department',
-        icon: LayoutGrid,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    // {
-    //     title: 'Repository',
-    //     url: 'https://github.com/laravel/react-starter-kit',
-    //     icon: Folder,
-    // },
 ];
 
 export function AppSidebar() {
@@ -62,8 +33,9 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
-                <NavMain items={masterNavItems} />
+                {MainNavItems.map((navGroup: NavGroup) => (
+                    <NavMain key={navGroup.group} title={navGroup.group} items={navGroup.items} />
+                ))}
             </SidebarContent>
 
             <SidebarFooter>
