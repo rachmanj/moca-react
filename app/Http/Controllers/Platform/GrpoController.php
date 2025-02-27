@@ -10,7 +10,7 @@ use App\Imports\GrpoTempImport;
 use Illuminate\Support\Facades\DB;
 
 class GrpoController extends Controller
-{   
+{
     public function index()
     {
         $hasTemporaryData = DB::table('grpo_temps')->exists();
@@ -79,6 +79,8 @@ class GrpoController extends Controller
             $importedCount = 0;
             $skippedCount = 0;
             $detailsCount = 0;
+            $inventoryUpdatedCount = 0;
+            $inventoryCreatedCount = 0;
 
             // Begin transaction for data integrity
             DB::beginTransaction();
@@ -146,6 +148,56 @@ class GrpoController extends Controller
                         'updated_at' => now()
                     ]);
                     $detailsCount++;
+
+                    // Update inventory
+                    if ($item->item_code && $item->qty > 0) {
+                        // Check if inventory item exists
+                        $inventory = DB::table('inventories')
+                            ->where('item_code', $item->item_code)
+                            ->first();
+
+                        if ($inventory) {
+                            // Update existing inventory
+                            $newTotalQty = $inventory->total_qty + $item->qty;
+                            $newTotalAmount = $inventory->total_amount + $item->item_amount;
+                            
+                            // Calculate new average unit price
+                            $newAvgUnitPrice = $newTotalQty > 0 ? $newTotalAmount / $newTotalQty : 0;
+                            
+                            // Calculate new average weight
+                            $totalWeight = ($inventory->avg_weight * $inventory->total_qty) + ($item->weight * $item->qty);
+                            $newAvgWeight = $newTotalQty > 0 ? $totalWeight / $newTotalQty : 0;
+                            $newTotalWeight = $inventory->total_weight + ($item->weight * $item->qty);
+                            DB::table('inventories')
+                                ->where('id', $inventory->id)
+                                ->update([
+                                    'total_qty' => $newTotalQty,
+                                    'avg_unit_price' => $newAvgUnitPrice,
+                                    'total_amount' => $newTotalAmount,
+                                    'avg_weight' => $newAvgWeight,
+                                    'total_weight' => $newTotalWeight,
+                                    'updated_at' => now()
+                                ]);
+                            
+                            $inventoryUpdatedCount++;
+                        } else {
+                            // Create new inventory record
+                            DB::table('inventories')->insert([
+                                'item_code' => $item->item_code,
+                                'description' => $item->description,
+                                'total_qty' => $item->qty,
+                                'avg_unit_price' => $item->unit_price,
+                                'total_amount' => $item->item_amount,
+                                'uom' => $item->uom,
+                                'avg_weight' => $item->weight,
+                                'total_weight' => $item->weight * $item->qty,
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]);
+                            
+                            $inventoryCreatedCount++;
+                        }
+                    }
                 }
 
                 $importedCount++;
@@ -157,6 +209,7 @@ class GrpoController extends Controller
             if ($skippedCount > 0) {
                 $message .= ", skipped {$skippedCount} duplicate documents";
             }
+            $message .= ". Inventory: {$inventoryCreatedCount} new items, {$inventoryUpdatedCount} updated items.";
 
             return Inertia::render('platform/grpo/index', [
                 'success' => $message,

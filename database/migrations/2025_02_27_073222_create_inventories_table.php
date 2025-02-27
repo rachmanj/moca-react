@@ -15,11 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('item_code')->nullable();
             $table->string('description')->nullable();
-            $table->integer('qty')->nullable();
-            $table->decimal('unit_price', 10, 2)->nullable();
-            $table->decimal('item_amount', 10, 2)->nullable();
+            $table->integer('total_qty')->nullable();
+            $table->decimal('avg_unit_price', 15, 2)->nullable();
+            $table->decimal('total_amount', 15, 2)->nullable();
             $table->string('uom')->nullable();
-            $table->decimal('weight', 10, 2)->nullable(); // in gr
+            $table->decimal('avg_weight', 15, 2)->nullable(); // in gr
+            $table->decimal('total_weight', 15, 2)->nullable(); // in gr
             $table->timestamps();
         });
     }

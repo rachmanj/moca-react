@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Platform\MigiController;
 use App\Http\Controllers\Platform\GrpoController;
+use App\Http\Controllers\Platform\InventoryController;
 
 Route::middleware(['auth'])->group(function () {
     // MIGI Routes
@@ -16,6 +17,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('grpo/upload', [GrpoController::class, 'upload'])->name('grpo.upload');
     Route::post('/grpo/truncate', [GrpoController::class, 'truncate'])->name('platform.grpo.truncate');
     Route::post('grpo/convert', [GrpoController::class, 'convertData'])->name('grpo.convert');
+
+    // Inventory Routes
+    Route::get('inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::get('inventory/{id}', [InventoryController::class, 'show'])->name('inventory.show');
 });
 
 // MIGI Debug Routes
@@ -47,3 +52,4 @@ Route::get('grpo/truncate', function() {
 // API Routes
 Route::get('api/migi/{id}/details', [MigiController::class, 'getDetails']);
 Route::get('api/grpo/{id}/details', [GrpoController::class, 'getDetails']);
+Route::get('api/inventory/{id}/details', [InventoryController::class, 'getDetails']);

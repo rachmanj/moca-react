@@ -12,7 +12,7 @@ export const MainNavItems: NavGroup[] = [
             },
             {
                 title: 'Inventories',
-                url: '/inventories',
+                url: '/inventory',
                 icon: Warehouse,
             },
             {
