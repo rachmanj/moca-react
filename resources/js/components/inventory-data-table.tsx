@@ -134,18 +134,18 @@ export default function InventoryDataTable({ data, pending = false }: InventoryD
                 sortable: true,
             },
             {
-                name: 'Avg. Weight (g)',
+                name: 'Avg. Weight (kg)',
                 selector: (row: InventoryRecord) => row.avg_weight,
                 sortable: true,
                 right: true,
-                cell: (row: InventoryRecord) => <div>{formatNumber(row.avg_weight)}</div>,
+                cell: (row: InventoryRecord) => <div>{formatNumber(row.avg_weight / 1000)}</div>,
             },
             {
-                name: 'Total Weight (g)',
+                name: 'Total Weight (kg)',
                 selector: (row: InventoryRecord) => row.total_weight,
                 sortable: true,
                 right: true,
-                cell: (row: InventoryRecord) => <div>{formatNumber(row.total_weight)}</div>,
+                cell: (row: InventoryRecord) => <div>{formatNumber(row.total_weight / 1000)}</div>,
             },
             {
                 name: 'Actions',

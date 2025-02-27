@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import InventoryDashboard from '@/components/inventory-dashboard';
 import InventoryDataTable from '@/components/inventory-data-table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -28,10 +29,31 @@ interface InventoryRecord {
     updated_at: string;
 }
 
-export default function InventoryIndex({ success: initialSuccess, inventories = [] }: { success?: string; inventories?: InventoryRecord[] }) {
+interface Stats {
+    totalItems: number;
+    totalQuantity: number;
+    totalWeight: number;
+}
+
+interface MonthlyData {
+    month: string;
+    total_weight: number;
+}
+
+type TabType = 'dashboard' | 'list';
+
+interface InventoryIndexProps {
+    success?: string;
+    inventories?: InventoryRecord[];
+    stats?: Stats;
+    monthlyData?: MonthlyData[];
+}
+
+export default function InventoryIndex({ success: initialSuccess, inventories = [], stats, monthlyData }: InventoryIndexProps) {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(initialSuccess || null);
     const [pending, setPending] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
     // Show success toast if initialSuccess is provided
     useEffect(() => {
@@ -52,9 +74,41 @@ export default function InventoryIndex({ success: initialSuccess, inventories = 
                     </div>
                 </div>
 
-                {/* DataTable Component */}
-                <div className="mt-8">
-                    <InventoryDataTable data={inventories} pending={pending} />
+                {/* Tabs */}
+                <div className="mt-6 border-b border-gray-700">
+                    <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button
+                            onClick={() => setActiveTab('dashboard')}
+                            className={`${
+                                activeTab === 'dashboard'
+                                    ? 'border-indigo-500 text-indigo-400'
+                                    : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300'
+                            } border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap`}
+                            aria-current={activeTab === 'dashboard' ? 'page' : undefined}
+                        >
+                            Dashboard
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('list')}
+                            className={`${
+                                activeTab === 'list'
+                                    ? 'border-indigo-500 text-indigo-400'
+                                    : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300'
+                            } border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap`}
+                            aria-current={activeTab === 'list' ? 'page' : undefined}
+                        >
+                            List
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Tab Content */}
+                <div className="mt-6">
+                    {activeTab === 'dashboard' ? (
+                        <InventoryDashboard data={inventories} stats={stats} monthlyData={monthlyData} />
+                    ) : (
+                        <InventoryDataTable data={inventories} pending={pending} />
+                    )}
                 </div>
             </div>
 

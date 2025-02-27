@@ -154,7 +154,7 @@ export default function InventoryShow({ inventory, grpoDetails, success }: Inven
             cell: (row: GrpoDetailRecord) => <div>{formatDate(row.grpo_date)}</div>,
         },
         {
-            name: 'Unit No',
+            name: 'For Unit No',
             selector: (row: GrpoDetailRecord) => row.unit_no || '-',
             sortable: true,
         },
@@ -171,18 +171,18 @@ export default function InventoryShow({ inventory, grpoDetails, success }: Inven
             cell: (row: GrpoDetailRecord) => <div>{formatNumber(row.qty)}</div>,
         },
         {
-            name: 'Weight (g)',
+            name: 'Weight (kg)',
             selector: (row: GrpoDetailRecord) => row.weight,
             sortable: true,
             right: true,
-            cell: (row: GrpoDetailRecord) => <div>{formatNumber(row.weight)}</div>,
+            cell: (row: GrpoDetailRecord) => <div>{formatNumber(row.weight / 1000)}</div>,
         },
         {
-            name: 'Total Weight (g)',
+            name: 'Total Weight (kg)',
             selector: (row: GrpoDetailRecord) => row.weight * row.qty,
             sortable: true,
             right: true,
-            cell: (row: GrpoDetailRecord) => <div>{formatNumber(row.weight * row.qty)}</div>,
+            cell: (row: GrpoDetailRecord) => <div>{formatNumber((row.weight * row.qty) / 1000)}</div>,
         },
     ];
 
@@ -240,12 +240,12 @@ export default function InventoryShow({ inventory, grpoDetails, success }: Inven
                                     <dd className="mt-1 text-sm text-white">{formatNumber(inventory.total_amount)}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-400">Average Weight (g)</dt>
-                                    <dd className="mt-1 text-sm text-white">{formatNumber(inventory.avg_weight)}</dd>
+                                    <dt className="text-sm font-medium text-gray-400">Average Weight (kg)</dt>
+                                    <dd className="mt-1 text-sm text-white">{formatNumber(inventory.avg_weight / 1000)}</dd>
                                 </div>
                                 <div>
-                                    <dt className="text-sm font-medium text-gray-400">Total Weight (g)</dt>
-                                    <dd className="mt-1 text-sm text-white">{formatNumber(inventory.total_weight)}</dd>
+                                    <dt className="text-sm font-medium text-gray-400">Total Weight (kg)</dt>
+                                    <dd className="mt-1 text-sm text-white">{formatNumber(inventory.total_weight / 1000)}</dd>
                                 </div>
                                 <div>
                                     <dt className="text-sm font-medium text-gray-400">Created At</dt>
