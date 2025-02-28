@@ -9,6 +9,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use App\Models\MigiTemp;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MigiTempImport implements ToCollection, WithHeadingRow
 {
@@ -18,54 +19,85 @@ class MigiTempImport implements ToCollection, WithHeadingRow
     public function collection(Collection $rows)
     {
         $allowedPrefixes = ['SP-', 'GT-', 'UC-', 'CO-'];
+        
+        // Track unique document_number + line combinations to prevent duplicates
         $importedCombinations = [];
         
-        foreach ($rows as $row) {
-            // Skip rows with empty item_code or document_number or line
-            if (empty($row['item_code']) || empty($row['document_number']) || empty($row['line'])) {
+        // Add debugging counters
+        $totalRows = count($rows);
+        $skippedEmptyFields = 0;
+        $skippedNoAllowedPrefix = 0;
+        $skippedDuplicateInBatch = 0;
+        $skippedExistingInDB = 0;
+        $importedRows = 0;
+        
+        Log::info("Starting import of {$totalRows} rows");
+        
+        foreach ($rows as $index => $row) {
+            // Log the row being processed for debugging
+            Log::info("Processing row " . ($index + 1), [
+                'document_number' => $row['document_number'] ?? 'MISSING',
+                'line' => $row['line'] ?? 'MISSING',
+                'item_code' => $row['item_code'] ?? 'MISSING'
+            ]);
+            
+            // Skip rows with empty document_number or line (item_code is now optional)
+            if (empty($row['document_number']) || empty($row['line'])) {
+                Log::info("Skipping row " . ($index + 1) . " - Empty required field (document_number or line)");
+                $skippedEmptyFields++;
                 continue;
             }
             
-            // Check if item_code starts with any of the allowed prefixes
-            $hasAllowedPrefix = false;
-            foreach ($allowedPrefixes as $prefix) {
-                if (strpos($row['item_code'], $prefix) === 0) {
-                    $hasAllowedPrefix = true;
-                    break;
+            // Only check for allowed prefixes if item_code is not empty
+            if (!empty($row['item_code'])) {
+                // Check if item_code starts with any of the allowed prefixes
+                $hasAllowedPrefix = false;
+                foreach ($allowedPrefixes as $prefix) {
+                    if (strpos($row['item_code'], $prefix) === 0) {
+                        $hasAllowedPrefix = true;
+                        break;
+                    }
                 }
-            }
-            
-            // Skip rows that don't have allowed prefixes
-            if (!$hasAllowedPrefix) {
-                continue;
+                
+                // Skip rows that don't have allowed prefixes
+                if (!$hasAllowedPrefix) {
+                    Log::info("Skipping row " . ($index + 1) . " - No allowed prefix in item_code: " . $row['item_code']);
+                    $skippedNoAllowedPrefix++;
+                    continue;
+                }
             }
             
             // Create a unique key for document_number and line combination
             $combinationKey = $row['document_number'] . '_' . $row['line'];
             
             // Skip if this combination already exists in our tracking array
+            // This ensures only the first occurrence of a document_number + line combination is imported
             if (in_array($combinationKey, $importedCombinations)) {
+                Log::info("Skipping row " . ($index + 1) . " - Duplicate combination in current batch: " . $combinationKey);
+                $skippedDuplicateInBatch++;
                 continue;
             }
             
-            // Check if this combination already exists in the database
+            // Also check if this combination already exists in the database
             $existingRecord = DB::table('migi_temps')
                 ->where('document_number', $row['document_number'])
                 ->where('line', $row['line'])
                 ->exists();
                 
             if ($existingRecord) {
+                Log::info("Skipping row " . ($index + 1) . " - Combination already exists in database: " . $combinationKey);
+                $skippedExistingInDB++;
                 continue;
             }
             
-            // Add to our tracking array
+            // Add to our tracking array to prevent duplicates in the same import batch
             $importedCombinations[] = $combinationKey;
             
             // Insert the row into the database
             DB::table('migi_temps')->insert([
                 'document_number' => $row['document_number'],
-                'creation_date' => $this->transformDate($row['creation_date']),
-                'document_date' => $this->transformDate($row['document_date']),
+                'creation_date' => $this->transformDate($row['creation_date'] ?? null),
+                'document_date' => $this->transformDate($row['document_date'] ?? null),
                 'wo_number' => $row['wo_number'] ?? null,
                 'subject' => $row['subject'] ?? null,
                 'category' => $row['category'] ?? null,
@@ -77,7 +109,7 @@ class MigiTempImport implements ToCollection, WithHeadingRow
                 'model_number' => $row['model_number'] ?? null,
                 'serial_number' => $row['serial_number'] ?? null,
                 'hours_meter' => $row['hours_meter'] ?? null,
-                'item_code' => $row['item_code'],
+                'item_code' => $row['item_code'] ?? null, // Make item_code optional
                 'desc' => $row['desc'] ?? null,
                 'qty' => $row['qty'] ?? null,
                 'stock_price' => $row['stock_price'] ?? null,
@@ -96,7 +128,20 @@ class MigiTempImport implements ToCollection, WithHeadingRow
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+            
+            Log::info("Successfully imported row " . ($index + 1) . " with combination: " . $combinationKey);
+            $importedRows++;
         }
+        
+        // Log summary of import
+        Log::info("Import summary", [
+            'total_rows' => $totalRows,
+            'imported_rows' => $importedRows,
+            'skipped_empty_fields' => $skippedEmptyFields,
+            'skipped_no_allowed_prefix' => $skippedNoAllowedPrefix,
+            'skipped_duplicate_in_batch' => $skippedDuplicateInBatch,
+            'skipped_existing_in_db' => $skippedExistingInDB
+        ]);
     }
     
     /**

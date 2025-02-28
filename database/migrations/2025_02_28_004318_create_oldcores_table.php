@@ -11,17 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('migi_details', function (Blueprint $table) {
+        Schema::create('oldcores', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('migi_id')->constrained('migis');
-            $table->integer('line')->nullable();
+            $table->foreignId('migi_detail_id')->constrained('migi_details')->nullable();
             $table->string('item_code')->nullable();
             $table->string('desc')->nullable();
-            $table->integer('qty')->nullable();
-            $table->integer('received_qty')->nullable();
-            $table->decimal('stock_price', 15, 2)->nullable();
-            $table->decimal('total_price', 15, 2)->nullable();
-            $table->integer('wo_qty')->nullable();
+            $table->integer('total_qty')->default(0);
             $table->string('project_code')->nullable();
             $table->timestamps();
         });
@@ -32,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('migi_details');
+        Schema::dropIfExists('oldcores');
     }
 };
