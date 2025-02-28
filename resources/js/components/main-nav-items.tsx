@@ -1,5 +1,5 @@
 import { type NavGroup } from '@/types';
-import { Box, LayoutGrid, Upload, Warehouse } from 'lucide-react';
+import { Box, LayoutGrid, Shield, Upload, Warehouse } from 'lucide-react';
 
 export const MainNavItems: NavGroup[] = [
     {
@@ -44,6 +44,16 @@ export const MainNavItems: NavGroup[] = [
                 title: 'Department',
                 url: '/department',
                 icon: LayoutGrid,
+            },
+        ],
+    },
+    {
+        group: 'Admin',
+        items: [
+            {
+                title: 'Admin Dashboard',
+                url: '/admin/dashboard',
+                icon: Shield,
             },
         ],
     },

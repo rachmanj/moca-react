@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Folder } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 
 import { MainNavItems } from '@/components/main-nav-items';
 import { NavFooter } from '@/components/nav-footer';
@@ -11,9 +11,9 @@ import AppLogo from './app-logo';
 
 const footerNavItems = [
     {
-        title: 'Repository',
+        title: 'Need Help?',
         url: 'https://github.com/laravel/react-starter-kit',
-        icon: Folder,
+        icon: CircleHelp,
     },
 ];
 
