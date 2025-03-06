@@ -1,5 +1,5 @@
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/solid';
+import { MagnifyingGlassIcon, PencilSquareIcon, PrinterIcon, TrashIcon } from '@heroicons/react/24/solid';
 import { Head, Link } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
 import DataTable from 'react-data-table-component';
@@ -79,11 +79,13 @@ interface OldcoreReceiptRecord {
 interface Stats {
     totalItems: number;
     totalQuantity: number;
+    totalWeight: number;
 }
 
 interface MonthlyData {
     month: string;
-    total_quantity: number;
+    total_weight: number;
+    expected_total_weight: number;
 }
 
 type TabType = 'dashboard' | 'list' | 'issued' | 'receive';
@@ -93,6 +95,7 @@ interface OldcoresIndexProps {
     oldcores?: OldcoreRecord[];
     stats?: Stats;
     monthlyData?: MonthlyData[];
+    userRole?: string[] | string;
 }
 
 // Custom theme for DataTable
@@ -178,7 +181,7 @@ const customStyles = {
     },
 };
 
-export default function OldcoresIndex({ success: initialSuccess, oldcores = [], stats, monthlyData }: OldcoresIndexProps) {
+export default function OldcoresIndex({ success: initialSuccess, oldcores = [], stats, monthlyData, userRole }: OldcoresIndexProps) {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(initialSuccess || null);
     const [pending, setPending] = useState(false);
@@ -210,10 +213,26 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
 
     // Fetch oldcore receipts when the receive tab is selected
     useEffect(() => {
-        if (activeTab === 'receive' && oldcoreReceipts.length === 0) {
+        if (activeTab === 'receive') {
             fetchOldcoreReceipts();
         }
     }, [activeTab]);
+
+    // Check for success messages in URL parameters
+    useEffect(() => {
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const successMessage = urlParams.get('success');
+
+        // Display success toast if parameter exists
+        if (successMessage) {
+            toast.success(decodeURIComponent(successMessage));
+
+            // Remove the success parameter from URL to prevent showing the toast on page refresh
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString().replace(/success=[^&]*(&|$)/, '') : '');
+            window.history.replaceState({}, document.title, newUrl.replace(/\?$/, ''));
+        }
+    }, []);
 
     const fetchMigiDetails = async () => {
         try {
@@ -224,6 +243,7 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
         } catch (err) {
             console.error('Error fetching migi details:', err);
             setError('Failed to load issued items');
+            toast.error('Failed to load issued items');
             setLoadingMigiDetails(false);
         }
     };
@@ -237,6 +257,7 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
         } catch (err) {
             console.error('Error fetching oldcore receipts:', err);
             setError('Failed to load receipt items');
+            toast.error('Failed to load receipt items');
             setLoadingReceipts(false);
         }
     };
@@ -303,6 +324,32 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
         );
     }, [issuedFilterText, resetIssuedPaginationToggle]);
 
+    // Format date to DD MMM YYYY
+    const formatDate = (dateString: string) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString;
+
+        const day = date.getDate().toString().padStart(2, '0');
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const month = monthNames[date.getMonth()];
+        const year = date.getFullYear();
+
+        return `${day} ${month} ${year}`;
+    };
+
+    // Convert grams to kilograms with proper formatting
+    const formatWeight = (weightInGrams: number | string): string => {
+        if (weightInGrams === null || weightInGrams === undefined) return '0.00 kg';
+
+        const weight = parseFloat(weightInGrams as any);
+        if (isNaN(weight)) return '0.00 kg';
+
+        // Convert from grams to kilograms (divide by 1000)
+        const weightInKg = weight / 1000;
+        return `${weightInKg.toFixed(2)} kg`;
+    };
+
     // Search component for Receive tab
     const receiveSubHeaderComponent = useMemo(() => {
         const handleClear = () => {
@@ -313,8 +360,8 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
         };
 
         return (
-            <div className="mb-4 flex w-full items-center justify-between">
-                <div className="relative max-w-sm flex-grow">
+            <div className="mb-4 flex w-full flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                <div className="relative w-full max-w-md">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                         <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                     </div>
@@ -333,7 +380,7 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
                 </div>
                 <Link
                     href={route('oldcores.receipts.create')}
-                    className="ml-4 inline-flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
                     Create New Receipt
                 </Link>
@@ -394,6 +441,7 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
             name: 'Date',
             selector: (row: OldcoreReceiptRecord) => row.date,
             sortable: true,
+            format: (row: OldcoreReceiptRecord) => formatDate(row.date),
         },
         {
             name: 'Item Code',
@@ -414,14 +462,11 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
             right: true,
         },
         {
-            name: 'Weight',
+            name: 'Weight (kg)',
             selector: (row: OldcoreReceiptRecord) => row.weight_total,
             sortable: true,
             right: true,
-            format: (row: OldcoreReceiptRecord) => {
-                const weight = parseFloat(row.weight_total as any);
-                return isNaN(weight) ? '0.00 kg' : `${weight.toFixed(2)} kg`;
-            },
+            format: (row: OldcoreReceiptRecord) => formatWeight(row.weight_total),
         },
         {
             name: 'Project',
@@ -431,12 +476,21 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
         {
             name: 'Actions',
             cell: (row: OldcoreReceiptRecord) => (
-                <div className="flex space-x-2">
-                    <Link href={route('oldcores.receipts.edit', row.id)} className="text-indigo-400 hover:text-indigo-300">
-                        Edit
+                <div className="flex space-x-3">
+                    <Link
+                        href={route('oldcores.receipts.edit', row.id)}
+                        className="text-indigo-400 transition-colors hover:text-indigo-300"
+                        title="Edit Receipt"
+                    >
+                        <PencilSquareIcon className="h-5 w-5" />
                     </Link>
-                    <Link href={route('oldcores.receipts.print', row.id)} className="text-green-400 hover:text-green-300" target="_blank">
-                        Print
+                    <Link
+                        href={route('oldcores.receipts.print', row.id)}
+                        className="text-green-400 transition-colors hover:text-green-300"
+                        target="_blank"
+                        title="Print Receipt"
+                    >
+                        <PrinterIcon className="h-5 w-5" />
                     </Link>
                     <button
                         onClick={() => {
@@ -453,15 +507,17 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
                                     });
                             }
                         }}
-                        className="text-red-400 hover:text-red-300"
+                        className="text-red-400 transition-colors hover:text-red-300"
+                        title="Delete Receipt"
                     >
-                        Delete
+                        <TrashIcon className="h-5 w-5" />
                     </button>
                 </div>
             ),
             ignoreRowClick: true,
             allowOverflow: true,
             button: true,
+            width: '120px',
         },
     ];
 
@@ -529,7 +585,7 @@ export default function OldcoresIndex({ success: initialSuccess, oldcores = [], 
 
                 {/* Tab Content */}
                 <div className="mt-6">
-                    {activeTab === 'dashboard' && <OldcoresDashboard data={oldcores} stats={stats} monthlyData={monthlyData} />}
+                    {activeTab === 'dashboard' && <OldcoresDashboard data={oldcores} stats={stats} monthlyData={monthlyData} userRole={userRole} />}
 
                     {activeTab === 'list' && <OldcoresDataTable data={oldcores} pending={pending} />}
 

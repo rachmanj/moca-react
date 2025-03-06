@@ -19,7 +19,10 @@ return new class extends Migration
             $table->string('item_code')->nullable();
             $table->text('desc')->nullable();
             $table->integer('qty');
-            $table->decimal('weight_total', 15, 2);
+            $table->decimal('weight_total', 15, 2); // in gr
+            $table->foreignId('inventory_id')->constrained('inventories')->nullable();
+            $table->decimal('grpo_avg_weight', 15, 2)->nullable();
+            $table->decimal('expected_total_weight', 15, 2)->nullable();
             $table->string('project');
             $table->text('remarks')->nullable();
             $table->string('given_by')->nullable();

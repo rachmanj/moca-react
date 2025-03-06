@@ -12,6 +12,7 @@ interface GrpoRecord {
     for_project: string;
     remarks: string;
     created_at: string;
+    weight?: number;
 }
 
 interface GrpoDataTableProps {
@@ -28,6 +29,12 @@ const formatDate = (dateString: string | null | undefined) => {
         month: 'short',
         year: 'numeric',
     });
+};
+
+const formatWeight = (weightInGrams: number | null | undefined) => {
+    if (weightInGrams === null || weightInGrams === undefined || weightInGrams === 0) return '-';
+    const weightInKg = weightInGrams / 1000;
+    return `${weightInKg.toFixed(2)} kg`;
 };
 
 const customTheme = {
@@ -150,6 +157,13 @@ export default function GrpoDataTable({ data, onViewDetails, pending = false }: 
                 name: 'For Project',
                 selector: (row: GrpoRecord) => row.for_project || '-',
                 sortable: true,
+            },
+            {
+                name: 'Weight (kg)',
+                selector: (row: GrpoRecord) => row.weight || 0,
+                sortable: true,
+                format: (row: GrpoRecord) => formatWeight(row.weight),
+                right: true,
             },
             {
                 name: 'Actions',

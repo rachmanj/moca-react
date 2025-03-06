@@ -6,6 +6,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from 'sweetalert2';
 
+import GrpoDashboard from '@/components/grpo-dashboard';
 import GrpoDataTable from '@/components/grpo-data-table';
 import GrpoDetailModal from '@/components/grpo-detail-modal';
 import AppLayout from '@/layouts/app-layout';
@@ -27,6 +28,7 @@ interface GrpoRecord {
     for_project: string;
     remarks: string;
     created_at: string;
+    weight?: number;
 }
 
 interface GrpoDetail {
@@ -41,14 +43,30 @@ interface GrpoDetail {
     weight: number;
 }
 
+interface Stats {
+    totalDocuments: number;
+    totalWeight: number;
+}
+
+interface MonthlyData {
+    month: string;
+    total_weight: number;
+}
+
+type TabType = 'dashboard' | 'list';
+
 export default function GrpoPage({
     success: initialSuccess,
     hasTemporaryData = false,
     grpos = [],
+    stats,
+    monthlyData,
 }: {
     success?: string;
     hasTemporaryData?: boolean;
     grpos?: GrpoRecord[];
+    stats?: Stats;
+    monthlyData?: MonthlyData[];
 }) {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -63,6 +81,7 @@ export default function GrpoPage({
     const [grpoDetails, setGrpoDetails] = useState<GrpoDetail[]>([]);
     const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
     const [loadingDetails, setLoadingDetails] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabType>('dashboard');
 
     // Show success toast if initialSuccess is provided
     useEffect(() => {
@@ -353,9 +372,43 @@ export default function GrpoPage({
                     </div>
                 </div>
 
-                {/* DataTable Component */}
-                <div className="mt-8">
-                    <GrpoDataTable data={grpos} onViewDetails={handleViewDetails} pending={pending} />
+                {/* Tabs */}
+                <div className="mt-6 border-b border-gray-700">
+                    <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button
+                            onClick={() => setActiveTab('dashboard')}
+                            className={`${
+                                activeTab === 'dashboard'
+                                    ? 'border-indigo-500 text-indigo-400'
+                                    : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300'
+                            } border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap`}
+                            aria-current={activeTab === 'dashboard' ? 'page' : undefined}
+                        >
+                            Dashboard
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('list')}
+                            className={`${
+                                activeTab === 'list'
+                                    ? 'border-indigo-500 text-indigo-400'
+                                    : 'border-transparent text-gray-400 hover:border-gray-300 hover:text-gray-300'
+                            } border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap`}
+                            aria-current={activeTab === 'list' ? 'page' : undefined}
+                        >
+                            List
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Tab Content */}
+                <div className="mt-6">
+                    {activeTab === 'dashboard' ? (
+                        <GrpoDashboard data={grpos} stats={stats} monthlyData={monthlyData} />
+                    ) : (
+                        <div className="mt-8">
+                            <GrpoDataTable data={grpos} onViewDetails={handleViewDetails} pending={pending} />
+                        </div>
+                    )}
                 </div>
             </div>
 

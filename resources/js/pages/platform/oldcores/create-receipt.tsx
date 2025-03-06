@@ -238,7 +238,7 @@ export default function CreateReceipt({ migiDetails }: CreateReceiptProps) {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="weight_total">Weight Total *</Label>
+                                <Label htmlFor="weight_total">Weight Total (gr) *</Label>
                                 <Input
                                     type="number"
                                     id="weight_total"
